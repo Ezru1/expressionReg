@@ -20,6 +20,7 @@ def main():
     train_data = ExpressionDataset(root_dir=img_dir, txt_path=path_txt_train, transform=transforms_func)
     valid_data = ExpressionDataset(root_dir=img_dir, txt_path=path_txt_valid, transform=transforms_func)
     train_loader = DataLoader(dataset=train_data, batch_size=2, drop_last=True, shuffle=True)
+    print(train_data.__getitem__(0)[0].shape)
     
     model = TinnyCNN(7)
 

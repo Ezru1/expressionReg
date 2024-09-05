@@ -17,10 +17,10 @@ def main():
     transforms_func = transforms.Compose([
         transforms.Resize((32, 32)),
         transforms.Grayscale(num_output_channels=3),
+        transforms.RandomRotation(degrees=35),
         transforms.ToTensor(),
     ])
     train_data = ExpressionDatasetFER2013(root_dir=img_dir, csv_path=csv_path, mode='Training', transform=transforms_func)
-    valid_data = ExpressionDatasetFER2013(root_dir=img_dir, csv_path=csv_path, mode='PublicTest', transform=transforms_func)
     train_loader = DataLoader(dataset=train_data, batch_size=32, drop_last=True, shuffle=True)
     
     model = ResNet18()
@@ -30,7 +30,7 @@ def main():
     
     # step 3/4 : 优化模块
     loss_f = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9, weight_decay=5e-4)
+    optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
     scheduler = optim.lr_scheduler.StepLR(optimizer, gamma=0.1, step_size=5)
     
     model.train()
@@ -52,8 +52,6 @@ def main():
             loss.backward()
             max_norm = 2.0
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm)
-            # for name,p in model.named_parameters():
-            #     print(name,p)
             optimizer.step()
 
             # 计算分类准确率
@@ -61,27 +59,7 @@ def main():
             correct_num += (predicted == labels).sum()
             s += labels.shape[0]
         acc = correct_num / s
-        print("Epoch:{} Valid Loss:{:.2f} Acc:{:.0%}\n".format(epoch, l, acc))
-        # 验证集验证
-        # model.eval()
-        # valid_loader = DataLoader(dataset=valid_data, batch_size=128, drop_last=True, shuffle=True)
-        # correct_num = 0
-        # s_num = 0
-        # loss = 0
-        # for data, labels in valid_loader:
-        #     # forward
-        #     data, labels = data.to(device), labels.to(device)
-        #     outputs = model(data)
-
-        #     # loss 计算
-        #     loss += loss_f(outputs, labels)
-
-        #     # 计算分类准确率
-        #     _, predicted = torch.max(outputs.data, 1)
-        #     correct_num += (predicted == labels).sum()
-        #     s_num += labels.shape[0]
-        # acc_valid = correct_num / s_num
-        # print("Epoch:{} Valid Loss:{:.2f} Acc:{:.0%}\n".format(epoch, loss, acc_valid))
+        print("Epoch:{} Training Loss:{:.2f} Acc:{:.0%}\n".format(epoch, l, acc))
         
         checkpoint = {
             'epoch': epoch,  # current epoch

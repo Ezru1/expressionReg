@@ -8,23 +8,18 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 from model.tinycnn import TinnyCNN
+from model.resnet import ResNet18
 import torch.nn as nn
 from torchvision import transforms
 from PIL import Image
 
 def load_ckpt(path):
-    model = TinnyCNN(7)
+    model = ResNet18()
     # step 3/4 : 优化模块
-    loss_f = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, gamma=0.1, step_size=50)
     checkpoint = torch.load(path)
 
     # Restore the model and optimizer state
     model.load_state_dict(checkpoint['model_state_dict'])
-    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    epoch = checkpoint['epoch']
-    loss = checkpoint['loss']
     return model
 
 def get_result(data_in,model):
@@ -33,7 +28,7 @@ def get_result(data_in,model):
     return outputs
 
 def main():
-    D = {0:'surprise',1:'sadness',2:'happy',3:'fear',4:'disgust',5:'contempt',6:'anger'}
+    D = {0:'Angry',1:'Disgust',2:'Fear',3:'Happy',4:'Sad',5:'Surprise',6:'Neutral'}
     # Initialize the webcam (0 is usually the default camera)
     cap = cv2.VideoCapture(0)
 
@@ -41,8 +36,8 @@ def main():
     if not cap.isOpened():
         print("Error: Could not open webcam.")
         exit()
-    model = load_ckpt("./ckpt/model_checkpoint_13.pth")
-    x, y, w, h = 250, 120, 200, 200
+    model = load_ckpt("./ckpt/fer2013/model_checkpoint_19.pth")
+    x, y, w, h = 350, 200, 200, 200
     # image = Image.open('1.jpg')
     # print(type(image))
     while True:
@@ -60,7 +55,8 @@ def main():
         # cv2.imshow('Webcam Feed', frame)
         image = Image.fromarray(gray_image)
         preprocess = transforms.Compose([
-            transforms.Resize((48, 48)),
+            transforms.Resize((32, 32)),
+            transforms.Grayscale(num_output_channels=3),
             transforms.ToTensor(),
         ])
         resized_img = preprocess(image).unsqueeze(0)
